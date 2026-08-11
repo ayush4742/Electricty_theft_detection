@@ -1,0 +1,183 @@
+/* =========================================================
+   EnergyGuard — unified dark control-room theme
+   (fixes the light/dark inconsistency + low-contrast text
+    from the previous glassmorphism pass)
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap');
+
+:root {
+  --bg-deep: #0b1020;        /* page background */
+  --bg-panel: #121a2e;       /* card surfaces */
+  --bg-panel-raised: #17203a;/* hovered / raised surfaces */
+  --line: rgba(255, 255, 255, 0.08);
+
+  --text-hi: #f4f6fb;        /* headings, values */
+  --text-mid: #c3c9dc;       /* body text */
+  --text-low: #8892ac;       /* captions, labels */
+
+  --accent-purple: #8b5cf6;
+  --accent-cyan: #22d3ee;
+  --accent-amber: #f5a623;
+  --theft-red: #f16465;
+  --normal-green: #34d399;
+
+  --radius-xl: 28px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+
+  --shadow-panel: 0 20px 50px rgba(0, 0, 0, 0.35);
+  --shadow-panel-hover: 0 26px 64px rgba(0, 0, 0, 0.45);
+
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  color: var(--text-mid);
+  background: var(--bg-deep);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 14% 8%, rgba(139, 92, 246, 0.14), transparent 30%),
+    radial-gradient(circle at 88% 4%, rgba(34, 211, 238, 0.10), transparent 26%),
+    var(--bg-deep);
+  background-attachment: fixed;
+}
+
+a { text-decoration: none; color: var(--accent-cyan); }
+a:hover { color: var(--accent-purple); }
+
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; }
+
+h1, h2, h3, h4, .page-title {
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-hi);
+  margin: 0;
+}
+
+.page-subtitle, .subtitle, p.subtitle,
+.MuiTypography-body2, .MuiTypography-caption {
+  color: var(--text-low);
+}
+
+/* numbers read like an instrument readout everywhere */
+.MuiTypography-h3, .MuiTypography-h4, .stat-value, .metric-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-hi);
+}
+
+::selection { background: rgba(139, 92, 246, 0.3); color: #fff; }
+
+/* =========================================================
+   Every card/panel/paper: ONE consistent dark surface
+   ========================================================= */
+.MuiPaper-root,
+.MuiCard-root,
+.MuiPopover-paper {
+  background: var(--bg-panel) !important;
+  background-image: none !important;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+  color: var(--text-mid);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.MuiPaper-root:hover,
+.MuiCard-root:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-panel-hover);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.MuiCard-root .MuiTypography-root,
+.MuiPaper-root .MuiTypography-root {
+  color: inherit;
+}
+
+/* stat card icon chips keep their tint, on the dark surface now */
+.icon-chip.theft, .stat-icon.theft       { background: rgba(241,100,101,0.16); color: var(--theft-red); }
+.icon-chip.normal, .stat-icon.normal     { background: rgba(52,211,153,0.16); color: var(--normal-green); }
+.icon-chip.confidence, .stat-icon.confidence { background: rgba(139,92,246,0.18); color: var(--accent-purple); }
+.icon-chip.processing, .stat-icon.processing { background: rgba(245,166,35,0.16); color: var(--accent-amber); }
+.icon-chip, .stat-icon {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* =========================================================
+   Sidebar
+   ========================================================= */
+.MuiDrawer-paper {
+  background: #0a0f1e !important;
+  color: #dbe4f7;
+  border-right: 1px solid var(--line);
+}
+
+.MuiListItemButton-root {
+  border-radius: 14px;
+  color: #b7c3e0;
+  transition: background 0.2s ease, transform 0.2s ease, color 0.2s ease;
+}
+.MuiListItemButton-root:hover { background: rgba(139, 92, 246, 0.12); transform: translateX(3px); }
+.MuiListItemButton-root.Mui-selected,
+.MuiListItemButton-root.active {
+  background: linear-gradient(135deg, rgba(139,92,246,0.9), rgba(34,211,238,0.65));
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(139, 92, 246, 0.35);
+}
+.MuiListItemButton-root.Mui-selected .MuiListItemIcon-root,
+.MuiListItemButton-root.active .MuiListItemIcon-root { color: #fff; }
+.MuiListItemIcon-root { color: rgba(255,255,255,0.7); }
+
+/* =========================================================
+   Buttons / inputs
+   ========================================================= */
+.MuiButton-containedPrimary {
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+  color: #fff;
+  border: none;
+  box-shadow: 0 14px 32px rgba(139, 92, 246, 0.25);
+}
+.MuiButton-containedPrimary:hover {
+  background: linear-gradient(135deg, #7c3aed, #06b6d4);
+}
+.MuiButton-outlinedPrimary { border-color: rgba(139,92,246,0.4); color: var(--text-hi); }
+
+.MuiOutlinedInput-root { background: rgba(255,255,255,0.03); border-radius: 12px; }
+.MuiOutlinedInput-notchedOutline { border-color: var(--line); }
+.MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline { border-color: var(--accent-cyan); }
+
+/* =========================================================
+   Tables
+   ========================================================= */
+.MuiTableContainer-root { border-radius: 18px; border: 1px solid var(--line); }
+.MuiTableCell-root { border-bottom: 1px solid var(--line); color: var(--text-mid); }
+.MuiTableHead-root .MuiTableCell-root { color: var(--text-hi); font-weight: 700; }
+.MuiTableRow-root:hover { background: rgba(139, 92, 246, 0.06); }
+
+/* =========================================================
+   Scrollbar
+   ========================================================= */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.35);
+  border-radius: 999px;
+  border: 2px solid var(--bg-deep);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
