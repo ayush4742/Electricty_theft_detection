@@ -1,17 +1,30 @@
 from __future__ import annotations
 
 import logging
+<<<<<<< HEAD
 from datetime import datetime
+=======
+import sys
+import traceback
+>>>>>>> origin/main
 from typing import Any
 
+import numpy as np
 from flask import Blueprint, Flask, jsonify, request
 from werkzeug.exceptions import HTTPException
 
+<<<<<<< HEAD
 from database import get_alert_counts, get_alert_history, get_dashboard_stats, get_prediction_history
 from model_loader import get_model_info
 from notification_service import get_alert_status, send_test_alert
 from utils import (
     dispatch_batch_alerts,
+=======
+from database import get_dashboard_stats, get_prediction_history, get_prediction_by_id
+from model_loader import get_model_info
+from utils import (
+    explain_from_features,
+>>>>>>> origin/main
     predict_from_csv,
     predict_from_features,
     prepare_csv_features,
@@ -131,6 +144,7 @@ def model_info() -> Any:
     return jsonify(get_model_info())
 
 
+<<<<<<< HEAD
 # --------------------------------------------------------------------------- #
 # SMS alerting endpoints
 # --------------------------------------------------------------------------- #
@@ -176,6 +190,79 @@ def test_alert() -> Any:
     result = send_test_alert(token=token, timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     status_code = int(result.pop("status_code", 200))
     return jsonify(result), status_code
+=======
+@bp.post("/explain")
+def explain_prediction() -> Any:
+    """Generate SHAP explanations for a single prediction."""
+    payload = request.get_json(silent=True)
+
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Invalid request", "message": "Request body must be a JSON object."}), 400
+
+    if "readings" not in payload:
+        return jsonify({"error": "Missing field", "message": "JSON body must contain a 'readings' array."}), 400
+
+    feature_names = payload.get("feature_names")
+    if feature_names is not None and not isinstance(feature_names, list):
+        return jsonify({"error": "Invalid input", "message": "The 'feature_names' field must be a list when provided."}), 400
+
+    top_n = payload.get("top_n", 10)
+    if not isinstance(top_n, int) or top_n < 1:
+        return jsonify({"error": "Invalid input", "message": "The 'top_n' field must be a positive integer."}), 400
+
+    try:
+        features = validate_readings(payload["readings"])
+        explanation = explain_from_features(features, feature_names=feature_names, top_n=top_n)
+        return jsonify(explanation)
+    except ValueError as exc:
+        logger.warning("Explanation validation failed: %s", exc)
+        return jsonify({"error": "Invalid input", "message": str(exc)}), 400
+    except Exception as exc:
+        logger.exception("Explanation generation failed")
+        return jsonify({"error": "Explanation failed", "message": f"Unable to generate explanation: {exc}"}), 500
+
+
+@bp.get("/history/<int:prediction_id>/explain")
+def explain_from_history(prediction_id: int) -> Any:
+    """Generate SHAP explanation for a prediction stored in history."""
+    top_n = request.args.get("top_n", 10, type=int)
+    logger.info(
+        "History explain request: prediction_id=%s top_n=%s sys.executable=%s",
+        prediction_id,
+        top_n,
+        sys.executable,
+    )
+
+    if top_n < 1:
+        return jsonify({"error": "Invalid input", "message": "The 'top_n' parameter must be a positive integer."}), 400
+
+    try:
+        # Retrieve the prediction from history
+        prediction = get_prediction_by_id(prediction_id)
+
+        if not prediction:
+            return jsonify({"error": "Not found", "message": f"Prediction with ID {prediction_id} not found."}), 404
+
+        # Check if features are available
+        if not prediction.get("features"):
+            return jsonify({"error": "No features", "message": "Features not available for this prediction. Cannot generate explanation."}), 400
+
+        # Prepare features for explanation
+        features = np.array(prediction["features"]).reshape(1, -1)
+        logger.info("History explain feature vector loaded: shape=%s", features.shape)
+
+        # Generate explanation using the same working pipeline as POST /explain
+        explanation = explain_from_features(features, feature_names=None, top_n=top_n)
+
+        return jsonify(explanation)
+    except ValueError as exc:
+        logger.warning("Explanation validation failed: %s", exc)
+        return jsonify({"error": "Invalid input", "message": str(exc)}), 400
+    except Exception as exc:
+        logger.exception("Explanation from history failed")
+        logger.error("History explain traceback:\n%s", traceback.format_exc())
+        return jsonify({"error": "Explanation failed", "message": f"Unable to generate explanation: {exc}"}), 500
+>>>>>>> origin/main
 
 
 def register_routes(app: Flask) -> None:

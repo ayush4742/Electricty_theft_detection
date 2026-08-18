@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 import logging
+=======
+import json
+>>>>>>> origin/main
 import sqlite3
 import time
 from datetime import datetime
 from typing import Any
+
+import numpy as np
 
 from config import DB_PATH
 
@@ -23,11 +29,20 @@ def init_db() -> None:
                 prediction TEXT NOT NULL,
                 confidence REAL NOT NULL,
                 risk TEXT NOT NULL,
-                timestamp TEXT NOT NULL
+                timestamp TEXT NOT NULL,
+                features TEXT
             )
             """
         )
         connection.commit()
+        
+        # Add features column to existing table if it doesn't exist
+        try:
+            connection.execute("ALTER TABLE predictions ADD COLUMN features TEXT")
+            connection.commit()
+        except sqlite3.OperationalError:
+            # Column already exists
+            pass
 
     init_alert_log()
 
@@ -61,12 +76,26 @@ def init_alert_log() -> None:
         connection.commit()
 
 
-def save_prediction(meter_id: str | None, prediction: str, confidence: float, risk: str, timestamp: str) -> None:
+def save_prediction(meter_id: str | None, prediction: str, confidence: float, risk: str, timestamp: str, features: np.ndarray | list | None = None) -> None:
     """Store one prediction result in the SQLite database."""
+    features_json = None
+    if features is not None:
+        try:
+            # Convert numpy array to list if needed
+            if isinstance(features, np.ndarray):
+                features_list = features.flatten().tolist()
+            elif isinstance(features, list):
+                features_list = features
+            else:
+                features_list = list(features)
+            features_json = json.dumps(features_list)
+        except Exception:
+            features_json = None
+    
     with sqlite3.connect(DB_PATH) as connection:
         connection.execute(
-            "INSERT INTO predictions (meter_id, prediction, confidence, risk, timestamp) VALUES (?, ?, ?, ?, ?)",
-            (meter_id, prediction, confidence, risk, timestamp),
+            "INSERT INTO predictions (meter_id, prediction, confidence, risk, timestamp, features) VALUES (?, ?, ?, ?, ?, ?)",
+            (meter_id, prediction, confidence, risk, timestamp, features_json),
         )
         connection.commit()
 
@@ -76,11 +105,32 @@ def get_prediction_history(limit: int = 100) -> list[dict[str, Any]]:
     with sqlite3.connect(DB_PATH) as connection:
         connection.row_factory = sqlite3.Row
         rows = connection.execute(
-            "SELECT meter_id, prediction, confidence, risk, timestamp FROM predictions ORDER BY id DESC LIMIT ?",
+            "SELECT id, meter_id, prediction, confidence, risk, timestamp, features FROM predictions ORDER BY id DESC LIMIT ?",
             (limit,),
         ).fetchall()
 
     return [dict(row) for row in rows]
+
+
+def get_prediction_by_id(prediction_id: int) -> dict[str, Any] | None:
+    """Retrieve a specific prediction record by ID."""
+    with sqlite3.connect(DB_PATH) as connection:
+        connection.row_factory = sqlite3.Row
+        row = connection.execute(
+            "SELECT id, meter_id, prediction, confidence, risk, timestamp, features FROM predictions WHERE id = ?",
+            (prediction_id,),
+        ).fetchone()
+    
+    if row:
+        result = dict(row)
+        # Parse features if available
+        if result.get("features"):
+            try:
+                result["features"] = json.loads(result["features"])
+            except json.JSONDecodeError:
+                result["features"] = None
+        return result
+    return None
 
 
 def get_dashboard_stats(limit: int = 8) -> dict[str, Any]:
@@ -88,7 +138,7 @@ def get_dashboard_stats(limit: int = 8) -> dict[str, Any]:
     with sqlite3.connect(DB_PATH) as connection:
         connection.row_factory = sqlite3.Row
         rows = connection.execute(
-            "SELECT meter_id, prediction, confidence, risk, timestamp FROM predictions ORDER BY id DESC"
+            "SELECT id, meter_id, prediction, confidence, risk, timestamp, features FROM predictions ORDER BY id DESC"
         ).fetchall()
 
     recent_history = [dict(row) for row in rows[:limit]]

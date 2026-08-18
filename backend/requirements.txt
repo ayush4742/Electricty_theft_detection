@@ -1,9 +1,13 @@
 Flask==3.0.3
 Flask-Cors==5.0.0
 joblib==1.4.2
-numpy==2.1.0
+numpy==1.26.4
 pandas==2.2.3
 scikit-learn==1.6.1
+<<<<<<< HEAD
 python-dotenv==1.0.1
 twilio==9.3.7
 requests==2.32.3
+=======
+shap==0.45.1
+>>>>>>> origin/main
