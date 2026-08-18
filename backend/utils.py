@@ -276,7 +276,6 @@ def predict_from_csv(dataframe: pd.DataFrame, meter_ids: list[Any] | None = None
     return results
 
 
-<<<<<<< HEAD
 def dispatch_batch_alerts(results: list[dict[str, Any]]) -> dict[str, Any]:
     """Send SMS alerts for a completed CSV run.
 
@@ -378,7 +377,6 @@ def dispatch_batch_alerts(results: list[dict[str, Any]]) -> dict[str, Any]:
         summary["alert_error"] = message
 
     return summary
-=======
 def explain_from_features(features: np.ndarray, feature_names: list[str] | None = None, top_n: int = 10) -> dict[str, Any]:
     """
     Generate SHAP explanations for a prediction.
@@ -432,4 +430,3 @@ def explain_from_features(features: np.ndarray, feature_names: list[str] | None 
 
     return explanation_result
 
->>>>>>> origin/main

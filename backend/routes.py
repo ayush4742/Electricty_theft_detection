@@ -1,30 +1,27 @@
 from __future__ import annotations
 
 import logging
-<<<<<<< HEAD
 from datetime import datetime
-=======
 import sys
 import traceback
->>>>>>> origin/main
 from typing import Any
 
 import numpy as np
 from flask import Blueprint, Flask, jsonify, request
 from werkzeug.exceptions import HTTPException
 
-<<<<<<< HEAD
-from database import get_alert_counts, get_alert_history, get_dashboard_stats, get_prediction_history
+from database import (
+    get_alert_counts,
+    get_alert_history,
+    get_dashboard_stats,
+    get_prediction_by_id,
+    get_prediction_history,
+)
 from model_loader import get_model_info
 from notification_service import get_alert_status, send_test_alert
 from utils import (
     dispatch_batch_alerts,
-=======
-from database import get_dashboard_stats, get_prediction_history, get_prediction_by_id
-from model_loader import get_model_info
-from utils import (
     explain_from_features,
->>>>>>> origin/main
     predict_from_csv,
     predict_from_features,
     prepare_csv_features,
@@ -144,7 +141,6 @@ def model_info() -> Any:
     return jsonify(get_model_info())
 
 
-<<<<<<< HEAD
 # --------------------------------------------------------------------------- #
 # SMS alerting endpoints
 # --------------------------------------------------------------------------- #
@@ -190,7 +186,6 @@ def test_alert() -> Any:
     result = send_test_alert(token=token, timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     status_code = int(result.pop("status_code", 200))
     return jsonify(result), status_code
-=======
 @bp.post("/explain")
 def explain_prediction() -> Any:
     """Generate SHAP explanations for a single prediction."""
@@ -262,7 +257,6 @@ def explain_from_history(prediction_id: int) -> Any:
         logger.exception("Explanation from history failed")
         logger.error("History explain traceback:\n%s", traceback.format_exc())
         return jsonify({"error": "Explanation failed", "message": f"Unable to generate explanation: {exc}"}), 500
->>>>>>> origin/main
 
 
 def register_routes(app: Flask) -> None:

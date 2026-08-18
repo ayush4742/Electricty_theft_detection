@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-<<<<<<< HEAD
 import logging
-=======
 import json
->>>>>>> origin/main
 import sqlite3
 import time
 from datetime import datetime
