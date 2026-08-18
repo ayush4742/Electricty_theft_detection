@@ -17,5 +17,17 @@ export const explainPrediction = (payload) => api.post('/explain', payload);
 export const explainFromHistory = (predictionId, topN = 10) => 
   api.get(`/history/${predictionId}/explain`, { params: { top_n: topN } });
 
+// --- SMS alerting -----------------------------------------------------------
+// The backend only ever returns booleans and counts here: no Twilio
+// credentials and no phone numbers are sent to the browser.
+export const getAlertStatus = () => api.get('/alert-status');
+export const getAlertHistory = () => api.get('/alert-history');
+
+// The test token is typed by the user at the moment they press the button and
+// is never stored in this file, in state that outlives the page, or in the
+// build output.
+export const sendTestAlert = (token) =>
+  api.post('/test-alert', {}, { headers: { 'X-Alert-Token': token } });
+
 export default api;
 

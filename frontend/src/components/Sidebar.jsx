@@ -3,6 +3,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import HistoryIcon from '@mui/icons-material/History';
 import InfoIcon from '@mui/icons-material/Info';
+import SmsIcon from '@mui/icons-material/Sms';
 import { NavLink } from 'react-router-dom';
 
 const drawerWidth = 240;
@@ -11,6 +12,7 @@ const links = [
   { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
   { label: 'CSV Upload', path: '/upload', icon: <UploadFileIcon /> },
   { label: 'Prediction History', path: '/history', icon: <HistoryIcon /> },
+  { label: 'SMS Alerts', path: '/alerts', icon: <SmsIcon /> },
   { label: 'Model Info', path: '/model-info', icon: <InfoIcon /> },
 ];
 
