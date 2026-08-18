@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+import sys
 import time
+import traceback
 from datetime import datetime
 from typing import Any
 
@@ -13,6 +15,21 @@ from model_loader import IMPUTER, MODEL, SCALER
 
 
 logger = logging.getLogger(__name__)
+
+# Import SHAP explainer lazily to avoid errors if SHAP is not installed
+try:
+    import shap
+    from shap_explainer import get_shap_manager
+
+    SHAP_AVAILABLE = True
+    logger.info("SHAP import succeeded: sys.executable=%s", sys.executable)
+    logger.info("SHAP import succeeded: shap.__version__=%s", getattr(shap, "__version__", "unknown"))
+    logger.info("SHAP import succeeded: shap.__file__=%s", getattr(shap, "__file__", "unknown"))
+except Exception as exc:
+    SHAP_AVAILABLE = False
+    logger.exception("SHAP import failed in utils.py; sys.executable=%s", sys.executable)
+    logger.error("SHAP import traceback:\n%s", traceback.format_exc())
+    logger.warning("SHAP not available; explain endpoint will not function. Original error: %s", exc)
 
 
 def _build_response(prediction_value: Any, confidence: float, timestamp: str, meter_id: str | None = None) -> dict[str, Any]:
@@ -106,6 +123,7 @@ def predict_from_features(features: np.ndarray, meter_id: str | None = None, sto
             confidence=response["confidence"],
             risk=response["risk"],
             timestamp=timestamp,
+            features=features,
         )
 
     return response
@@ -216,13 +234,71 @@ def predict_from_csv(dataframe: pd.DataFrame, meter_ids: list[Any] | None = None
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             response = _build_response(prediction_value, confidence, timestamp, meter_id=meter_id)
             results.append(response)
+            # Extract the raw features for this row
+            row_features = feature_matrix[start_index + offset]
             save_prediction(
                 meter_id=meter_id,
                 prediction=response["prediction"],
                 confidence=response["confidence"],
                 risk=response["risk"],
                 timestamp=timestamp,
+                features=row_features,
             )
 
     logger.info("Batch prediction completed in %.3f seconds for %s rows", time.perf_counter() - start_time, total_rows)
     return results
+
+
+def explain_from_features(features: np.ndarray, feature_names: list[str] | None = None, top_n: int = 10) -> dict[str, Any]:
+    """
+    Generate SHAP explanations for a prediction.
+
+    Args:
+        features: Raw feature array (will be imputed and scaled).
+        feature_names: Optional list of feature names from the CSV columns.
+        top_n: Number of top contributing features to return.
+
+    Returns:
+        Dictionary with prediction, risk, confidence, and explanation.
+    """
+    logger.info("explain_from_features called: sys.executable=%s top_n=%s input_shape=%s", sys.executable, top_n, np.asarray(features).shape)
+    if not SHAP_AVAILABLE:
+        logger.error("SHAP is unavailable at runtime: sys.executable=%s", sys.executable)
+        raise ValueError(
+            "SHAP is not available in the active Flask environment. "
+            "This app is running under a Python interpreter without the shap package installed. "
+            f"sys.executable={sys.executable}"
+        )
+
+    # Validate and preprocess features (same as predict_from_features)
+    validated_features = validate_feature_matrix(features)
+    start_time = time.perf_counter()
+    imputed_features = IMPUTER.transform(validated_features)
+    logger.info("Imputation completed in %.3f seconds", time.perf_counter() - start_time)
+
+    start_time = time.perf_counter()
+    scaled_features = SCALER.transform(imputed_features)
+    logger.info("Scaling completed in %.3f seconds", time.perf_counter() - start_time)
+
+    # Get feature names from the input features if not provided
+    if feature_names is None:
+        feature_names = [f"feature_{i}" for i in range(validated_features.shape[1])]
+
+    # Get SHAP explanation
+    shap_manager = get_shap_manager()
+    logger.info("SHAP manager resolved: %s", type(shap_manager).__name__)
+    if not shap_manager.is_available():
+        logger.error("SHAP manager exists but TreeExplainer is not initialized: sys.executable=%s", sys.executable)
+        if hasattr(shap_manager, "init_error"):
+            logger.error("TreeExplainer init error: %s", shap_manager.init_error)
+        raise ValueError(
+            "SHAP explainer is not initialized in the active Flask environment. "
+            f"sys.executable={sys.executable}"
+        )
+
+    start_time = time.perf_counter()
+    explanation_result = shap_manager.explain_prediction(scaled_features, feature_names=feature_names, top_n=top_n)
+    logger.info("SHAP explanation generated in %.3f seconds", time.perf_counter() - start_time)
+
+    return explanation_result
+

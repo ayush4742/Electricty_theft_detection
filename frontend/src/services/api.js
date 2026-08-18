@@ -13,5 +13,9 @@ export const getPredictionHistory = () => api.get('/history');
 export const getDashboardStats = () => api.get('/dashboard');
 export const predictJson = (payload) => api.post('/predict', payload);
 export const predictCsv = (formData) => api.post('/predict-csv', formData);
+export const explainPrediction = (payload) => api.post('/explain', payload);
+export const explainFromHistory = (predictionId, topN = 10) => 
+  api.get(`/history/${predictionId}/explain`, { params: { top_n: topN } });
 
 export default api;
+

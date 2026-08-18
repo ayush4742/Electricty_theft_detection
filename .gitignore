@@ -1,7 +1,27 @@
-frontend/node_modules/
-frontend/dist/
-backend/__pycache__/
-*.pyc
-*.log
-*.db
-.env
+👉 Encapsulation is not about hiding access, it's about controlling access.
+
+class BankAccount {
+private:
+    int balance;
+
+public:
+    BankAccount() {
+        balance = 0;
+    }
+
+    void deposit(int amount) {
+        if(amount > 0)
+            balance += amount;
+    }
+
+    void withdraw(int amount) {
+        if(amount > 0 && amount <= balance)
+            balance -= amount;
+        else
+            cout << "Invalid withdrawal\n";
+    }
+
+    int getBalance() {
+        return balance;
+    }
+};
