@@ -10,9 +10,15 @@ import pandas as pd
 
 from database import save_prediction
 from model_loader import IMPUTER, MODEL, SCALER
+from notification_service import get_settings, scrub, send_batch_summary, send_theft_alert
 
 
 logger = logging.getLogger(__name__)
+
+
+def _no_alert(reason: str) -> dict[str, Any]:
+    """Default alert fields for rows that were never considered for an SMS."""
+    return {"alert_sent": False, "alert_error": None, "alert_skipped": reason}
 
 
 def _build_response(prediction_value: Any, confidence: float, timestamp: str, meter_id: str | None = None) -> dict[str, Any]:
@@ -73,7 +79,12 @@ def validate_feature_matrix(features: np.ndarray) -> np.ndarray:
     return features_array
 
 
-def predict_from_features(features: np.ndarray, meter_id: str | None = None, store_history: bool = True) -> dict[str, Any]:
+def predict_from_features(
+    features: np.ndarray,
+    meter_id: str | None = None,
+    store_history: bool = True,
+    send_alert: bool = True,
+) -> dict[str, Any]:
     """Apply imputation, scaling, and model prediction to a single feature vector."""
     validated_features = validate_feature_matrix(features)
     start_time = time.perf_counter()
@@ -107,6 +118,22 @@ def predict_from_features(features: np.ndarray, meter_id: str | None = None, sto
             risk=response["risk"],
             timestamp=timestamp,
         )
+
+    # --- SMS alerting -------------------------------------------------------
+    # Runs only after the prediction is complete and safely stored. Theft only,
+    # never for Normal, and wrapped so that no SMS problem can affect the
+    # prediction response the caller receives.
+    if response["prediction"] == "Theft" and send_alert:
+        response.update(
+            send_theft_alert(
+                meter_id=meter_id,
+                confidence=response["confidence"],
+                timestamp=timestamp,
+                risk=response["risk"],
+            )
+        )
+    else:
+        response.update(_no_alert("normal_prediction" if response["prediction"] != "Theft" else "alerting_skipped"))
 
     return response
 
@@ -226,3 +253,106 @@ def predict_from_csv(dataframe: pd.DataFrame, meter_ids: list[Any] | None = None
 
     logger.info("Batch prediction completed in %.3f seconds for %s rows", time.perf_counter() - start_time, total_rows)
     return results
+
+
+def dispatch_batch_alerts(results: list[dict[str, Any]]) -> dict[str, Any]:
+    """Send SMS alerts for a completed CSV run.
+
+    Called by the /predict-csv route *after* every row has been predicted and
+    stored, so alerting never slows down or endangers inference.
+
+    Spam control has three layers:
+      1. Normal rows are ignored entirely.
+      2. Only the MAX_ALERTS_PER_BATCH highest-confidence theft meters get an
+         individual SMS. The rest are marked 'batch_limit'.
+      3. Each individual alert still passes through the per-meter cooldown.
+    Finally one summary SMS reports the totals for the whole upload.
+
+    Mutates `results` in place with alert_sent / alert_error / alert_skipped and
+    returns a summary dict. Never raises.
+    """
+    summary: dict[str, Any] = {
+        "theft_count": 0,
+        "alerts_attempted": 0,
+        "alerts_sent": 0,
+        "alerts_failed": 0,
+        "alerts_suppressed": 0,
+        "summary_sms_sent": False,
+        "alert_error": None,
+    }
+
+    try:
+        for result in results:
+            result.setdefault("alert_sent", False)
+            result.setdefault("alert_error", None)
+            result.setdefault("alert_skipped", None)
+
+        theft_rows = [result for result in results if result.get("prediction") == "Theft"]
+        summary["theft_count"] = len(theft_rows)
+
+        for result in results:
+            if result.get("prediction") != "Theft":
+                result["alert_skipped"] = "normal_prediction"
+
+        if not theft_rows:
+            logger.info("[SMS] No theft rows in this upload; no alerts sent")
+            return summary
+
+        settings = get_settings()
+
+        if not settings.enabled:
+            for result in theft_rows:
+                result["alert_skipped"] = "alerts_disabled"
+            summary["alerts_suppressed"] = len(theft_rows)
+            logger.info("[SMS] Alerting is disabled; %s theft row(s) not alerted", len(theft_rows))
+            return summary
+
+        ranked = sorted(theft_rows, key=lambda item: float(item.get("confidence") or 0.0), reverse=True)
+        limit = max(0, settings.max_alerts_per_batch)
+        to_alert = ranked[:limit]
+        suppressed = ranked[limit:]
+
+        for result in suppressed:
+            result["alert_skipped"] = "batch_limit"
+        summary["alerts_suppressed"] = len(suppressed)
+
+        if suppressed:
+            logger.info(
+                "[SMS] %s theft meter(s) exceeded MAX_ALERTS_PER_BATCH=%s and were summarised instead of texted",
+                len(suppressed),
+                limit,
+            )
+
+        for result in to_alert:
+            summary["alerts_attempted"] += 1
+            outcome = send_theft_alert(
+                meter_id=result.get("meter_id"),
+                confidence=result.get("confidence") or 0.0,
+                timestamp=result.get("timestamp") or datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                risk=result.get("risk") or "High",
+            )
+            result.update(outcome)
+            if outcome["alert_sent"]:
+                summary["alerts_sent"] += 1
+            elif outcome["alert_error"]:
+                summary["alerts_failed"] += 1
+                summary["alert_error"] = summary["alert_error"] or outcome["alert_error"]
+            else:
+                summary["alerts_suppressed"] += 1
+
+        summary_outcome = send_batch_summary(
+            total_rows=len(results),
+            theft_count=summary["theft_count"],
+            alerted_count=summary["alerts_sent"],
+            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        )
+        summary["summary_sms_sent"] = summary_outcome["alert_sent"]
+        if summary_outcome["alert_error"]:
+            summary["alert_error"] = summary["alert_error"] or summary_outcome["alert_error"]
+
+    except Exception as exc:  # alerting must never break a completed prediction
+        message = scrub(f"Unexpected SMS failure: {exc}")
+        logger.error("[SMS] Batch alert dispatch failed: %s", message)
+        summary["alert_error"] = message
+
+    return summary

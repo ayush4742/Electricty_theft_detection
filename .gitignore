@@ -4,4 +4,14 @@ backend/__pycache__/
 *.pyc
 *.log
 *.db
+
+# Secrets - never commit these
 .env
+*.env
+backend/.env
+.env.local
+.env.*.local
+
+# Allow the template that contains no real values
+!.env.example
+!backend/.env.example

@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import logging
 import sqlite3
+import time
+from datetime import datetime
 from typing import Any
 
 from config import DB_PATH
+
+
+logger = logging.getLogger(__name__)
 
 
 def init_db() -> None:
@@ -20,6 +26,37 @@ def init_db() -> None:
                 timestamp TEXT NOT NULL
             )
             """
+        )
+        connection.commit()
+
+    init_alert_log()
+
+
+def init_alert_log() -> None:
+    """Create the SMS alert log table used for cooldown tracking.
+
+    This is a separate, additive table. The existing `predictions` table and its
+    data are never touched by the alerting feature.
+    """
+    with sqlite3.connect(DB_PATH) as connection:
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS alert_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                meter_id TEXT NOT NULL,
+                alert_type TEXT NOT NULL DEFAULT 'theft',
+                channel TEXT,
+                status TEXT NOT NULL,
+                error TEXT,
+                confidence REAL,
+                recipients INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                created_epoch REAL NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_alert_log_meter_time ON alert_log (meter_id, created_epoch DESC)"
         )
         connection.commit()
 
@@ -77,3 +114,108 @@ def get_dashboard_stats(limit: int = 8) -> dict[str, Any]:
         "latest_prediction": latest_prediction,
         "recent_history": recent_history,
     }
+
+
+# --------------------------------------------------------------------------- #
+# SMS alert log (used for duplicate-alert / cooldown protection)
+# --------------------------------------------------------------------------- #
+def record_alert(
+    meter_id: str,
+    alert_type: str,
+    channel: str | None,
+    status: str,
+    error: str | None,
+    confidence: float | None,
+    recipients: int = 0,
+) -> None:
+    """Write one row describing an alert attempt.
+
+    `status` is one of: sent | failed | cooldown. Only 'sent' rows start a new
+    cooldown window, so a failed SMS can be retried on the next prediction.
+    Never raises: alert bookkeeping must not break a prediction request.
+    """
+    try:
+        with sqlite3.connect(DB_PATH) as connection:
+            connection.execute(
+                """
+                INSERT INTO alert_log
+                    (meter_id, alert_type, channel, status, error, confidence, recipients, created_at, created_epoch)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    str(meter_id),
+                    alert_type,
+                    channel,
+                    status,
+                    error,
+                    float(confidence) if confidence is not None else None,
+                    int(recipients),
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    time.time(),
+                ),
+            )
+            connection.commit()
+    except Exception:
+        logger.exception("Failed to write alert_log entry")
+
+
+def seconds_since_last_successful_alert(meter_id: str) -> float | None:
+    """Seconds since the last SMS that was actually delivered for this meter.
+
+    Returns None when no successful alert has ever been sent for the meter,
+    which means no cooldown applies.
+    """
+    try:
+        with sqlite3.connect(DB_PATH) as connection:
+            row = connection.execute(
+                """
+                SELECT created_epoch FROM alert_log
+                WHERE meter_id = ? AND status = 'sent' AND alert_type = 'theft'
+                ORDER BY created_epoch DESC LIMIT 1
+                """,
+                (str(meter_id),),
+            ).fetchone()
+    except Exception:
+        logger.exception("Failed to read alert_log for cooldown check")
+        return None
+
+    if not row or row[0] is None:
+        return None
+
+    return max(0.0, time.time() - float(row[0]))
+
+
+def get_alert_history(limit: int = 50) -> list[dict[str, Any]]:
+    """Return the most recent alert attempts for the frontend Alerts page."""
+    try:
+        with sqlite3.connect(DB_PATH) as connection:
+            connection.row_factory = sqlite3.Row
+            rows = connection.execute(
+                """
+                SELECT meter_id, alert_type, channel, status, error, confidence, recipients, created_at
+                FROM alert_log ORDER BY id DESC LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+    except Exception:
+        logger.exception("Failed to read alert history")
+        return []
+
+    return [dict(row) for row in rows]
+
+
+def get_alert_counts() -> dict[str, int]:
+    """Aggregate counts for the Alerts page header."""
+    try:
+        with sqlite3.connect(DB_PATH) as connection:
+            rows = connection.execute(
+                "SELECT status, COUNT(*) FROM alert_log GROUP BY status"
+            ).fetchall()
+    except Exception:
+        logger.exception("Failed to read alert counts")
+        return {"sent": 0, "failed": 0, "cooldown": 0}
+
+    counts = {"sent": 0, "failed": 0, "cooldown": 0}
+    for status, count in rows:
+        counts[str(status)] = int(count)
+    return counts

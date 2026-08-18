@@ -1,14 +1,22 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from typing import Any
 
 from flask import Blueprint, Flask, jsonify, request
 from werkzeug.exceptions import HTTPException
 
-from database import get_dashboard_stats, get_prediction_history
+from database import get_alert_counts, get_alert_history, get_dashboard_stats, get_prediction_history
 from model_loader import get_model_info
-from utils import predict_from_csv, predict_from_features, prepare_csv_features, validate_readings
+from notification_service import get_alert_status, send_test_alert
+from utils import (
+    dispatch_batch_alerts,
+    predict_from_csv,
+    predict_from_features,
+    prepare_csv_features,
+    validate_readings,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -76,7 +84,18 @@ def predict_csv() -> Any:
         dataframe, meter_ids = prepare_csv_features(uploaded_file)
         results = predict_from_csv(dataframe, meter_ids=meter_ids)
         logger.info("CSV prediction completed successfully")
-        return jsonify({"total_predictions": len(results), "results": results})
+
+        # Alerts are dispatched only after every row is predicted and stored,
+        # so SMS problems can never affect the prediction results below.
+        alert_summary = dispatch_batch_alerts(results)
+
+        return jsonify(
+            {
+                "total_predictions": len(results),
+                "results": results,
+                "alert_summary": alert_summary,
+            }
+        )
     except ValueError as exc:
         logger.warning("CSV prediction validation failed: %s", exc)
         return jsonify({"error": "Invalid input", "message": str(exc)}), 400
@@ -110,6 +129,53 @@ def dashboard() -> Any:
 def model_info() -> Any:
     """Return basic information about the loaded machine-learning model."""
     return jsonify(get_model_info())
+
+
+# --------------------------------------------------------------------------- #
+# SMS alerting endpoints
+# --------------------------------------------------------------------------- #
+@bp.get("/alert-status")
+def alert_status() -> Any:
+    """Report SMS configuration health.
+
+    Returns booleans and counts only. No tokens, no account SIDs and no phone
+    numbers are ever included in this response.
+    """
+    try:
+        status = get_alert_status()
+        status["counts"] = get_alert_counts()
+        return jsonify(status)
+    except Exception as exc:
+        logger.exception("Alert status retrieval failed")
+        return jsonify({"error": "Alert status error", "message": str(exc)}), 500
+
+
+@bp.get("/alert-history")
+def alert_history() -> Any:
+    """Return recent SMS alert attempts (no recipient numbers are stored)."""
+    try:
+        entries = get_alert_history(limit=50)
+        return jsonify({"count": len(entries), "alerts": entries})
+    except Exception as exc:
+        logger.exception("Alert history retrieval failed")
+        return jsonify({"error": "Alert history error", "message": str(exc)}), 500
+
+
+@bp.post("/test-alert")
+def test_alert() -> Any:
+    """Send a test SMS without needing a real theft prediction.
+
+    Protected two ways so it cannot be used to spam messages:
+      1. ALERT_TEST_TOKEN must be set on the server and supplied by the caller
+         via the X-Alert-Token header (or a 'token' field in the JSON body).
+      2. TEST_ALERT_COOLDOWN_SECONDS throttles repeat calls.
+    """
+    payload = request.get_json(silent=True) or {}
+    token = request.headers.get("X-Alert-Token") or payload.get("token")
+
+    result = send_test_alert(token=token, timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    status_code = int(result.pop("status_code", 200))
+    return jsonify(result), status_code
 
 
 def register_routes(app: Flask) -> None:
