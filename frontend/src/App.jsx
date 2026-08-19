@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import Footer from './components/Footer';
 import Sidebar from './components/Sidebar';
+import AlertsPage from './pages/AlertsPage';
 import DashboardPage from './pages/DashboardPage';
 import HistoryPage from './pages/HistoryPage';
 import ModelInfoPage from './pages/ModelInfoPage';
@@ -111,6 +112,7 @@ function App() {
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/upload" element={<UploadPage />} />
                 <Route path="/history" element={<HistoryPage />} />
+                <Route path="/alerts" element={<AlertsPage />} />
                 <Route path="/model-info" element={<ModelInfoPage />} />
               </Routes>
             </motion.div>

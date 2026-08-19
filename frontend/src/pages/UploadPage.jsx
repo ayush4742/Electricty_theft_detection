@@ -24,6 +24,8 @@ import DownloadIcon from '@mui/icons-material/Download';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { motion } from 'framer-motion';
 import { useMemo, useState } from 'react';
+import AlertStatusChip from '../components/AlertStatusChip';
+import AlertSummaryBanner from '../components/AlertSummaryBanner';
 import ErrorBoundary from '../components/ErrorBoundary';
 import UploadArea from '../components/UploadArea';
 import { predictCsv } from '../services/api';
@@ -34,6 +36,7 @@ const UploadPage = () => {
   const [results, setResults] = useState([]);
   const [stats, setStats] = useState({ totalRows: 0, theftCount: 0, normalCount: 0, processingTime: 0, averageConfidence: 0 });
   const [error, setError] = useState('');
+  const [alertSummary, setAlertSummary] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -51,6 +54,7 @@ const UploadPage = () => {
     setLoading(true);
     setError('');
     setResults([]);
+    setAlertSummary(null);
     setStats({ totalRows: 0, theftCount: 0, normalCount: 0, processingTime: 0, averageConfidence: 0 });
     setPage(0);
 
@@ -67,12 +71,30 @@ const UploadPage = () => {
         : 0;
       const processingTime = ((typeof window !== 'undefined' && window.performance ? window.performance.now() : Date.now()) - startedAt) / 1000;
 
+      const summary = response?.data?.alert_summary || null;
+
       setResults(responseResults);
+      setAlertSummary(summary);
       setStats({ totalRows, theftCount, normalCount, processingTime, averageConfidence });
-      setSnackbar({ open: true, message: 'Prediction completed successfully.', severity: 'success' });
+
+      const alertsSent = Number(summary?.alerts_sent || 0);
+      const alertsFailed = Number(summary?.alerts_failed || 0);
+      const completionMessage =
+        alertsFailed > 0
+          ? `Prediction completed. ${alertsFailed} SMS alert(s) failed to send.`
+          : alertsSent > 0
+            ? `Prediction completed. ${alertsSent} SMS alert(s) sent.`
+            : 'Prediction completed successfully.';
+
+      setSnackbar({
+        open: true,
+        message: completionMessage,
+        severity: alertsFailed > 0 ? 'warning' : 'success',
+      });
     } catch (err) {
       const backendMessage = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'CSV upload failed.';
       setResults([]);
+      setAlertSummary(null);
       setStats({ totalRows: 0, theftCount: 0, normalCount: 0, processingTime: 0, averageConfidence: 0 });
       setError(backendMessage);
       setSnackbar({ open: true, message: backendMessage, severity: 'error' });
@@ -104,13 +126,14 @@ const UploadPage = () => {
     if (!results.length) return;
 
     const csvRows = [
-      ['Meter ID', 'Prediction', 'Risk', 'Confidence', 'Timestamp'],
+      ['Meter ID', 'Prediction', 'Risk', 'Confidence', 'Timestamp', 'SMS Alert'],
       ...results.map((result) => [
         typeof result?.meter_id === 'string' && result.meter_id ? result.meter_id : 'N/A',
         typeof result?.prediction === 'string' ? result.prediction : 'Unknown',
         typeof result?.risk === 'string' ? result.risk : 'Unknown',
         typeof result?.confidence === 'number' ? `${result.confidence}%` : 'N/A',
         typeof result?.timestamp === 'string' && result.timestamp ? result.timestamp : 'N/A',
+        result?.alert_sent ? 'Sent' : result?.alert_error ? 'Failed' : 'Not sent',
       ]),
     ];
 
@@ -147,6 +170,7 @@ const UploadPage = () => {
               ⚠ {stats.theftCount} suspicious meters detected. Please review the results.
             </Alert>
           )}
+          <AlertSummaryBanner summary={alertSummary} />
 
           {stats.totalRows > 0 && (
             <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
@@ -251,6 +275,7 @@ const UploadPage = () => {
                             <TableCell>Risk</TableCell>
                             <TableCell>Confidence</TableCell>
                             <TableCell>Timestamp</TableCell>
+                            <TableCell>SMS Alert</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -274,6 +299,14 @@ const UploadPage = () => {
                                 </TableCell>
                                 <TableCell>{confidence}</TableCell>
                                 <TableCell>{timestamp}</TableCell>
+                                <TableCell>
+                                  <AlertStatusChip
+                                    alertSent={result?.alert_sent}
+                                    alertError={result?.alert_error}
+                                    alertSkipped={result?.alert_skipped}
+                                    prediction={prediction}
+                                  />
+                                </TableCell>
                               </TableRow>
                             );
                           })}
