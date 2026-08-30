@@ -9,6 +9,8 @@ from flask_cors import CORS
 from config import DEBUG, HOST, PORT, configure_logging
 from database import init_db
 from routes import register_routes
+from transformer_routes import register_transformer_routes
+from agent_routes import register_agent_routes
 
 
 configure_logging()
@@ -18,6 +20,8 @@ app = Flask(__name__)
 app.config["JSON_SORT_KEYS"] = False
 CORS(app)
 register_routes(app)
+register_transformer_routes(app)
+register_agent_routes(app)
 logger.info("Flask startup: sys.executable=%s", sys.executable)
 
 

@@ -9,6 +9,8 @@ import AlertsPage from './pages/AlertsPage';
 import DashboardPage from './pages/DashboardPage';
 import HistoryPage from './pages/HistoryPage';
 import ModelInfoPage from './pages/ModelInfoPage';
+import NetworkHealthPage from './pages/NetworkHealthPage';
+import AssistantPage from './pages/AssistantPage';
 import UploadPage from './pages/UploadPage';
 
 const drawerWidth = 240;
@@ -112,6 +114,8 @@ function App() {
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/upload" element={<UploadPage />} />
                 <Route path="/history" element={<HistoryPage />} />
+                <Route path="/network" element={<NetworkHealthPage />} />
+                <Route path="/assistant" element={<AssistantPage />} />
                 <Route path="/alerts" element={<AlertsPage />} />
                 <Route path="/model-info" element={<ModelInfoPage />} />
               </Routes>

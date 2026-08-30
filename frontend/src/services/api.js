@@ -26,4 +26,25 @@ export const getAlertHistory = () => api.get('/alert-history');
 export const sendTestAlert = (token) =>
   api.post('/test-alert', {}, { headers: { 'X-Alert-Token': token } });
 
+// --- Distribution-transformer energy balance --------------------------------
+// Compares energy supplied by each transformer against energy billed to the
+// meters under it. A persistent gap is unbilled energy, i.e. theft.
+export const getNetworkKpis = (days = 30) => api.get('/network-kpis', { params: { days } });
+export const getTransformers = (days = 30) => api.get('/transformers', { params: { days } });
+export const getHighLossTransformers = (days = 30) =>
+  api.get('/transformers/high-loss', { params: { days } });
+export const getTransformerDetail = (id, days = 30) =>
+  api.get(`/transformers/${id}`, { params: { days } });
+export const getTransformerTrend = (id, days = 30) =>
+  api.get(`/transformers/${id}/trend`, { params: { days } });
+
+// --- AI assistant -----------------------------------------------------------
+// The agent answers by calling tools that query the backend database. The
+// response includes which tools ran, so the UI can show where a number came
+// from instead of asking the user to trust it.
+export const getAgentStatus = () => api.get('/agent/status');
+export const getAgentSuggestions = () => api.get('/agent/suggestions');
+export const askAgent = (question, history = []) =>
+  api.post('/agent/ask', { question, history });
+
 export default api;
