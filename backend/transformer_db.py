@@ -95,6 +95,38 @@ def init_transformer_tables() -> None:
         )
         connection.commit()
 
+        # Additive migration. An uploaded dataset carries billed energy per
+        # transformer per day directly, rather than per meter, so the column is
+        # nullable and the balance queries fall back to summing meter_readings
+        # when it is absent. That keeps the seeded dataset working unchanged.
+        for table, column, decl in (
+            ("transformer_readings", "energy_billed", "REAL"),
+            ("transformers", "declared_meters", "INTEGER"),
+            ("transformers", "source", "TEXT"),
+        ):
+            try:
+                connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
+                connection.commit()
+                logger.info("[DT] added %s.%s", table, column)
+            except sqlite3.OperationalError:
+                pass   # already present
+
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS transformer_dataset (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                filename     TEXT NOT NULL,
+                uploaded_at  TEXT NOT NULL,
+                transformers INTEGER NOT NULL DEFAULT 0,
+                rows         INTEGER NOT NULL DEFAULT 0,
+                date_from    TEXT,
+                date_to      TEXT,
+                source       TEXT NOT NULL DEFAULT 'upload'
+            )
+            """
+        )
+        connection.commit()
+
     logger.info("Transformer energy-balance tables ready")
 
 
@@ -122,7 +154,10 @@ def list_transformers() -> list[dict[str, Any]]:
                t.capacity_kva,
                t.latitude,
                t.longitude,
-               COUNT(m.meter_id) AS meter_count
+               COALESCE(t.declared_meters, NULLIF(COUNT(m.meter_id), 0), 0) AS meter_count
+               -- An uploaded dataset states its own meter count, so that wins.
+               -- A seeded dataset leaves declared_meters NULL and falls back to
+               -- the real join against `meters`.
         FROM transformers t
         LEFT JOIN meters m ON m.transformer_id = t.transformer_id
         GROUP BY t.transformer_id
@@ -142,7 +177,10 @@ def get_transformer(transformer_id: str) -> dict[str, Any] | None:
                t.latitude,
                t.longitude,
                t.commissioned,
-               COUNT(m.meter_id) AS meter_count
+               COALESCE(t.declared_meters, NULLIF(COUNT(m.meter_id), 0), 0) AS meter_count
+               -- An uploaded dataset states its own meter count, so that wins.
+               -- A seeded dataset leaves declared_meters NULL and falls back to
+               -- the real join against `meters`.
         FROM transformers t
         LEFT JOIN meters m ON m.transformer_id = t.transformer_id
         WHERE t.transformer_id = ?
@@ -166,7 +204,7 @@ def get_daily_balance(transformer_id: str, days: int = 30) -> list[dict[str, Any
         """
         SELECT tr.reading_date,
                tr.energy_supplied,
-               COALESCE((
+               COALESCE(tr.energy_billed, (
                    SELECT SUM(mr.units_consumed)
                    FROM meter_readings mr
                    JOIN meters m ON m.meter_id = mr.meter_id
@@ -193,7 +231,7 @@ def get_all_daily_balances(days: int = 30) -> dict[str, list[dict[str, Any]]]:
         SELECT tr.transformer_id,
                tr.reading_date,
                tr.energy_supplied,
-               COALESCE((
+               COALESCE(tr.energy_billed, (
                    SELECT SUM(mr.units_consumed)
                    FROM meter_readings mr
                    JOIN meters m ON m.meter_id = mr.meter_id

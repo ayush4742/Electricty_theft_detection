@@ -42,16 +42,8 @@ const DashboardPage = () => {
               borderRadius: '16px',
               position: 'relative',
               overflow: 'hidden',
-              background: 'linear-gradient(135deg, #171f38 0%, #121a2e 100%)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 20px 50px rgba(0,0,0,0.35)',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                inset: 0,
-                background: 'radial-gradient(circle at 85% 0%, rgba(139,92,246,0.22), transparent 55%)',
-                pointerEvents: 'none',
-              },
+              background: '#ffffff',
+              border: '1px solid #e2e2e2',
             }}
           >
             <Typography
@@ -59,15 +51,12 @@ const DashboardPage = () => {
               fontWeight={800}
               sx={{
                 position: 'relative',
-                background: 'linear-gradient(90deg, #a78bfa, #22d3ee)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                color: 'transparent',
+                color: '#111111',
               }}
             >
               Dashboard
             </Typography>
-            <Typography sx={{ mt: 1, position: 'relative', color: '#c3c9dc' }}>
+            <Typography sx={{ mt: 1, position: 'relative', color: '#5f5f5f' }}>
               Monitor live predictions and inspect abnormal usage patterns with a modern AI analytics view.
             </Typography>
           </Box>
@@ -75,7 +64,7 @@ const DashboardPage = () => {
 
         {loading ? (
           <Box display="flex" justifyContent="center" py={6}>
-            <CircularProgress sx={{ color: '#8b5cf6' }} />
+            <CircularProgress sx={{ color: '#111111' }} />
           </Box>
         ) : error ? (
           <Alert severity="error">{error}</Alert>

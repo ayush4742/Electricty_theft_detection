@@ -11,6 +11,9 @@ from database import init_db
 from routes import register_routes
 from transformer_routes import register_transformer_routes
 from agent_routes import register_agent_routes
+from meter_routes import register_meter_routes
+from upload_routes import register_upload_routes
+from auth_routes import register_auth_routes
 
 
 configure_logging()
@@ -22,6 +25,9 @@ CORS(app)
 register_routes(app)
 register_transformer_routes(app)
 register_agent_routes(app)
+register_meter_routes(app)
+register_upload_routes(app)
+register_auth_routes(app)
 logger.info("Flask startup: sys.executable=%s", sys.executable)
 
 

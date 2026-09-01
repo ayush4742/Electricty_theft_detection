@@ -12,7 +12,7 @@ const PredictionResultCard = ({ result }) => {
   const reason = typeof result.reason === 'string' && result.reason ? result.reason : 'No reason provided.';
 
   return (
-    <Card sx={{ borderRadius: 4, border: `1px solid ${isTheft ? '#f44336' : '#2e7d32'}` }}>
+    <Card sx={{ borderRadius: 4, border: `1px solid ${isTheft ? '#c0392b' : '#2e7d32'}` }}>
       <CardContent>
         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems="flex-start" spacing={2}>
           <Box>

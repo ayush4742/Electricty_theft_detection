@@ -11,7 +11,7 @@ const UploadArea = ({ onUpload, loading, acceptedFiles, setAcceptedFiles }) => {
   });
 
   return (
-    <Card sx={{ borderRadius: 4, mb: 3, border: '1px solid', borderColor: 'divider', boxShadow: '0 18px 42px rgba(15,23,42,0.08)' }}>
+    <Card sx={{ borderRadius: 4, mb: 3, border: '1px solid', borderColor: 'divider', boxShadow: '0 18px 42px rgba(0,0,0,0.08)' }}>
       <CardContent>
         <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
           Upload CSV File
@@ -20,13 +20,13 @@ const UploadArea = ({ onUpload, loading, acceptedFiles, setAcceptedFiles }) => {
           <Box
             {...getRootProps()}
             sx={{
-              border: `2px dashed ${isDragActive ? '#2563eb' : '#cbd5e1'}`,
+              border: `2px dashed ${isDragActive ? '#111111' : '#d0d0d0'}`,
               borderRadius: 3,
               p: 4,
               textAlign: 'center',
-              background: isDragActive ? 'linear-gradient(135deg, rgba(37,99,235,0.12) 0%, rgba(255,255,255,1) 100%)' : 'linear-gradient(135deg, #f8fbff 0%, #eef6ff 100%)',
+              background: isDragActive ? '#f1f1f1' : '#f6f6f6',
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
+              transition: 'background 0.2s ease, border-color 0.2s ease',
             }}
           >
             <input {...getInputProps()} />

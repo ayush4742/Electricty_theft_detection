@@ -7,11 +7,11 @@ import SpeedIcon from '@mui/icons-material/Speed';
 import { motion } from 'framer-motion';
 
 const cards = [
-  { key: 'total', title: 'Total Processed', color: '#22d3ee', icon: <TrendingUpIcon fontSize="medium" /> },
-  { key: 'theft', title: 'Theft Detected', color: '#f16465', icon: <ReportProblemIcon fontSize="medium" /> },
-  { key: 'normal', title: 'Normal', color: '#34d399', icon: <VerifiedUserIcon fontSize="medium" /> },
-  { key: 'confidence', title: 'Avg Confidence', color: '#8b5cf6', icon: <ShieldIcon fontSize="medium" /> },
-  { key: 'speed', title: 'Processing Time', color: '#f5a623', icon: <SpeedIcon fontSize="medium" /> },
+  { key: 'total', title: 'Total Processed', color: '#6e6e6e', icon: <TrendingUpIcon fontSize="medium" /> },
+  { key: 'theft', title: 'Theft Detected', color: '#c0392b', icon: <ReportProblemIcon fontSize="medium" /> },
+  { key: 'normal', title: 'Normal', color: '#2e7d32', icon: <VerifiedUserIcon fontSize="medium" /> },
+  { key: 'confidence', title: 'Avg Confidence', color: '#111111', icon: <ShieldIcon fontSize="medium" /> },
+  { key: 'speed', title: 'Processing Time', color: '#96690a', icon: <SpeedIcon fontSize="medium" /> },
 ];
 
 const DashboardCards = ({ stats }) => {
@@ -35,7 +35,7 @@ const DashboardCards = ({ stats }) => {
                 borderRadius: '16px',
                 position: 'relative',
                 overflow: 'hidden',
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid rgba(0,0,0,0.06)',
                 '&::before': {
                   content: '""',
                   position: 'absolute',

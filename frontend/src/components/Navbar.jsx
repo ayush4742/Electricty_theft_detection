@@ -11,9 +11,8 @@ const Navbar = ({ title, subtitle, onToggleMode, mode, sx }) => {
       elevation={0}
       sx={{
         borderBottom: `1px solid ${theme.palette.divider}`,
-        background: mode === 'dark' ? 'linear-gradient(90deg, #07111f 0%, #10243d 100%)' : 'linear-gradient(90deg, #f8fbff 0%, #eef6ff 100%)',
-        color: mode === 'dark' ? '#f8fbff' : '#0f172a',
-        backdropFilter: 'blur(10px)',
+        background: '#ffffff',
+        color: '#111111',
         ...sx,
       }}
     >

@@ -16,3 +16,4 @@ backend/.env
 # Allow the templates that contain no real values
 !.env.example
 !backend/.env.example
+data1.csv 

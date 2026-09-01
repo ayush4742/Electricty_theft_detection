@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 564" width="600" height="564" font-family="Georgia, 'DejaVu Serif', 'Times New Roman', serif">
+  <title>EnergyGuard methodology: data preprocessing, parallel centralized and federated training, federated aggregation, explainability and network energy balance, combined risk scoring, monitoring platform</title>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,1.5 L9,5 L0,8.5 z" fill="#9a9a9a"/>
+    </marker>
+    <style>
+      .box   { rx: 6; }
+      .t     { fill: #ffffff; font-size: 15px; font-weight: bold; text-anchor: middle; }
+      .t2    { fill: #ffffff; font-size: 14px; font-weight: bold; text-anchor: middle; }
+      .sub   { fill: #ffffff; fill-opacity: 0.84; font-size: 11.5px; text-anchor: middle; }
+      .lane  { fill: #ffffff; fill-opacity: 0.70; font-size: 8.5px; font-weight: bold;
+               letter-spacing: 1.3px; text-anchor: middle; }
+      .link  { stroke: #9a9a9a; stroke-width: 1.6; fill: none; stroke-dasharray: 4 4; }
+    </style>
+  </defs>
+
+  <rect width="600" height="564" fill="#ffffff"/>
+
+  <!-- ============================ connectors (drawn first, boxes sit on top) -->
+  <!-- 1 -> 2 -->
+  <path class="link" d="M300,66 V84" marker-end="url(#arrow)"/>
+  <!-- 2 -> split -->
+  <path class="link" d="M300,130 V140"/>
+  <path class="link" d="M300,140 H165 V148" marker-end="url(#arrow)"/>
+  <path class="link" d="M300,140 H435 V148" marker-end="url(#arrow)"/>
+  <!-- federated lane -> aggregation -->
+  <path class="link" d="M435,204 V220" marker-end="url(#arrow)"/>
+  <!-- both lanes -> comparison -->
+  <path class="link" d="M165,204 V280 H300"/>
+  <path class="link" d="M435,276 V280 H300"/>
+  <path class="link" d="M300,280 V292" marker-end="url(#arrow)"/>
+  <!-- comparison -> split -->
+  <path class="link" d="M300,338 V346"/>
+  <path class="link" d="M300,346 H165 V356" marker-end="url(#arrow)"/>
+  <path class="link" d="M300,346 H435 V356" marker-end="url(#arrow)"/>
+  <!-- both -> risk scoring -->
+  <path class="link" d="M165,412 V420 H300"/>
+  <path class="link" d="M435,412 V420 H300"/>
+  <path class="link" d="M300,420 V432" marker-end="url(#arrow)"/>
+  <!-- risk -> platform -->
+  <path class="link" d="M300,478 V496" marker-end="url(#arrow)"/>
+
+  <!-- ================================================== 1. data collection -->
+  <rect class="box" x="40" y="10" width="520" height="56" fill="#6B5344"/>
+  <text class="t"   x="300" y="34">SGCC Electricity Consumption Dataset</text>
+  <text class="sub" x="300" y="52">42,372 consumers · 1,034 daily readings each</text>
+
+  <!-- =================================================== 2. preprocessing -->
+  <rect class="box" x="40" y="84" width="520" height="46" fill="#2C5741"/>
+  <text class="t"   x="300" y="113">Cleaning · Normalization · Leakage-Free Split</text>
+
+  <!-- ==================================== 3. two training lanes in parallel -->
+  <rect class="box" x="40" y="148" width="250" height="56" fill="#33604A"/>
+  <text class="lane" x="165" y="166">CENTRALIZED</text>
+  <text class="t2"   x="165" y="187">Random Forest Baseline</text>
+
+  <rect class="box" x="310" y="148" width="250" height="56" fill="#33604A"/>
+  <text class="lane" x="435" y="166">FEDERATED</text>
+  <text class="t2"   x="435" y="187">Local MLP per Client</text>
+
+  <!-- ====================================================== 4. aggregation -->
+  <rect class="box" x="310" y="220" width="250" height="56" fill="#3A6853"/>
+  <text class="t2"  x="435" y="244">FedAvg Aggregation</text>
+  <text class="sub" x="435" y="262">FedProx tested for non-IID drift</text>
+
+  <!-- ======================================================= 5. comparison -->
+  <rect class="box" x="40" y="292" width="520" height="46" fill="#41715B"/>
+  <text class="t"   x="300" y="321">Federated vs Centralized Performance Comparison</text>
+
+  <!-- ============================ 6. explainability + network-level evidence -->
+  <rect class="box" x="40" y="356" width="250" height="56" fill="#497964"/>
+  <text class="t2"  x="165" y="380">SHAP Explainability</text>
+  <text class="sub" x="165" y="398">Feature attribution per prediction</text>
+
+  <rect class="box" x="310" y="356" width="250" height="56" fill="#497964"/>
+  <text class="t2"  x="435" y="380">Network Energy Balance</text>
+  <text class="sub" x="435" y="398">Transformer supplied vs billed</text>
+
+  <!-- ==================================================== 7. risk scoring -->
+  <rect class="box" x="40" y="432" width="520" height="46" fill="#578A6E"/>
+  <text class="t"   x="300" y="461">Combined Risk Scoring &amp; Investigation Priority</text>
+
+  <!-- ======================================================== 8. platform -->
+  <rect class="box" x="40" y="496" width="520" height="46" fill="#6B5344"/>
+  <text class="t"   x="300" y="525">EnergyGuard Monitoring Platform</text>
+</svg>

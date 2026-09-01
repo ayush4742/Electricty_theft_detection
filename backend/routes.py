@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import datetime
 import sys
 import traceback
@@ -18,6 +19,7 @@ from database import (
     get_prediction_history,
 )
 from model_loader import get_model_info
+import upload_store
 from notification_service import get_alert_status, send_test_alert
 from utils import (
     dispatch_batch_alerts,
@@ -91,6 +93,11 @@ def predict_csv() -> Any:
         return jsonify({"error": "Invalid file type", "message": "Only CSV files are supported."}), 400
 
     try:
+        # Bracket the run so the batch can point at exactly the prediction rows
+        # it creates, without storing a second copy of them.
+        _first_id = upload_store.max_prediction_id()
+        _started = time.perf_counter()
+
         dataframe, meter_ids = prepare_csv_features(uploaded_file)
         results = predict_from_csv(dataframe, meter_ids=meter_ids)
         logger.info("CSV prediction completed successfully")
@@ -98,6 +105,17 @@ def predict_csv() -> Any:
         # Alerts are dispatched only after every row is predicted and stored,
         # so SMS problems can never affect the prediction results below.
         alert_summary = dispatch_batch_alerts(results)
+
+        # Record the run so the Upload page can restore it after navigation.
+        # Never raises - bookkeeping must not be able to fail a prediction.
+        upload_store.record_upload(
+            filename=uploaded_file.filename,
+            results=results,
+            processing_seconds=time.perf_counter() - _started,
+            alert_summary=alert_summary,
+            first_id=_first_id,
+            last_id=upload_store.max_prediction_id(),
+        )
 
         return jsonify(
             {

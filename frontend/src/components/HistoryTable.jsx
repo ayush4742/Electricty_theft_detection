@@ -36,7 +36,7 @@ const HistoryTable = ({ history }) => {
 
   if (!safeHistory.length) {
     return (
-      <Card sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', boxShadow: '0 18px 42px rgba(15,23,42,0.07)' }}>
+      <Card sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', boxShadow: '0 18px 42px rgba(0,0,0,0.07)' }}>
         <CardContent>
           <Typography color="text.secondary">No prediction history available.</Typography>
         </CardContent>
@@ -45,7 +45,7 @@ const HistoryTable = ({ history }) => {
   }
 
   return (
-    <Card sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', boxShadow: '0 18px 42px rgba(15,23,42,0.07)' }}>
+    <Card sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', boxShadow: '0 18px 42px rgba(0,0,0,0.07)' }}>
       <CardContent>
         <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={2} sx={{ mb: 2 }}>
           <Typography variant="h6" fontWeight={700}>
@@ -67,7 +67,7 @@ const HistoryTable = ({ history }) => {
           </Box>
         </Stack>
         <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3, maxHeight: 480 }}>
-          <Table stickyHeader size="small" sx={{ '& .MuiTableRow-root:nth-of-type(odd)': { backgroundColor: 'rgba(37,99,235,0.03)' } }}>
+          <Table stickyHeader size="small" sx={{ '& .MuiTableRow-root:nth-of-type(odd)': { backgroundColor: 'rgba(0,0,0,0.02)' } }}>
             <TableHead>
               <TableRow>
                 <TableCell>Meter ID</TableCell>
@@ -84,7 +84,7 @@ const HistoryTable = ({ history }) => {
                 const confidence = typeof row?.confidence === 'number' ? `${row.confidence}%` : typeof row?.confidence === 'string' ? `${row.confidence}%` : 'N/A';
 
                 return (
-                  <TableRow key={`${row?.timestamp || index}-${index}`} hover sx={{ '&:hover': { backgroundColor: 'rgba(37,99,235,0.06)' } }}>
+                  <TableRow key={`${row?.timestamp || index}-${index}`} hover sx={{ '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' } }}>
                     <TableCell>{row?.meter_id || 'N/A'}</TableCell>
                     <TableCell><Chip label={prediction} color={prediction === 'Theft' ? 'error' : 'success'} size="small" /></TableCell>
                     <TableCell><Chip label={risk} color={risk === 'High' ? 'error' : risk === 'Medium' ? 'warning' : 'success'} size="small" /></TableCell>

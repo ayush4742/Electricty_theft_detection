@@ -60,8 +60,8 @@ const MessageBubble = ({ message }) => {
             borderRadius: 3,
             borderTopRightRadius: isUser ? 4 : 12,
             borderTopLeftRadius: isUser ? 12 : 4,
-            backgroundColor: isUser ? 'rgba(34,211,238,0.12)' : 'background.paper',
-            borderColor: isUser ? 'rgba(34,211,238,0.3)' : undefined,
+            backgroundColor: isUser ? 'rgba(168,168,168,0.12)' : 'background.paper',
+            borderColor: isUser ? 'rgba(168,168,168,0.3)' : undefined,
           }}
         >
           <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.65 }}>
@@ -86,7 +86,7 @@ const MessageBubble = ({ message }) => {
                   height: 20,
                   fontSize: 11,
                   color: 'text.secondary',
-                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  backgroundColor: 'rgba(0,0,0,0.03)',
                 }}
               />
             ))}
@@ -338,11 +338,11 @@ const AssistantPage = () => {
           onClick={() => send()}
           disabled={busy || !input.trim() || status?.enabled === false}
           sx={{
-            backgroundImage: 'linear-gradient(135deg, #8b5cf6, #22d3ee)',
+            backgroundImage: '#111111',
             color: '#fff',
             borderRadius: 3,
             px: 2,
-            '&.Mui-disabled': { backgroundImage: 'none', backgroundColor: 'rgba(255,255,255,0.06)' },
+            '&.Mui-disabled': { backgroundImage: 'none', backgroundColor: 'rgba(0,0,0,0.04)' },
           }}
         >
           <SendIcon />

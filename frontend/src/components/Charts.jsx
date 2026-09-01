@@ -19,18 +19,22 @@ import {
   YAxis,
 } from 'recharts';
 
+// Chart palette. Black line on white with white dot markers is exactly the
+// reference treatment; the greys are for secondary series, and the three
+// status hues are reserved for meaning (theft / watch / normal).
 const COLORS = {
-  theft: '#f16465',
-  normal: '#34d399',
-  purple: '#8b5cf6',
-  cyan: '#22d3ee',
-  amber: '#f5a623',
-  grid: 'rgba(255,255,255,0.06)',
-  axis: '#8892ac',
+  theft: '#c0392b',
+  normal: '#2e7d32',
+  series1: '#111111',
+  series2: '#6e6e6e',
+  amber: '#96690a',
+  grid: 'rgba(0,0,0,0.04)',
+  axis: '#8a8a8a',
+  marker: '#ffffff',
 };
 
 const ChartCard = ({ title, subtitle, children }) => (
-  <Card sx={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', height: '100%', display: 'flex', flexDirection: 'column' }}>
+  <Card sx={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.06)', height: '100%', display: 'flex', flexDirection: 'column' }}>
     <CardContent sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
       <Stack spacing={0.25} sx={{ mb: 2 }}>
         <Typography variant="h6" fontWeight={700}>
@@ -81,19 +85,19 @@ const DarkTooltip = ({ active, payload, label }) => {
   return (
     <div
       style={{
-        background: '#17203a',
-        border: '1px solid rgba(255,255,255,0.12)',
+        background: '#f6f6f6',
+        border: '1px solid rgba(0,0,0,0.10)',
         borderRadius: 10,
         padding: '8px 12px',
         fontFamily: "'JetBrains Mono', monospace",
         fontSize: 12,
-        color: '#f4f6fb',
+        color: '#111111',
         boxShadow: '0 12px 30px rgba(0,0,0,0.4)',
       }}
     >
-      {label && <div style={{ color: '#8892ac', marginBottom: 4 }}>{label}</div>}
+      {label && <div style={{ color: '#8a8a8a', marginBottom: 4 }}>{label}</div>}
       {payload.map((entry) => (
-        <div key={entry.dataKey} style={{ color: entry.color || '#f4f6fb' }}>
+        <div key={entry.dataKey} style={{ color: entry.color || '#111111' }}>
           {entry.name}: {entry.value}
         </div>
       ))}
@@ -102,7 +106,7 @@ const DarkTooltip = ({ active, payload, label }) => {
 };
 
 const EmptyState = () => (
-  <Card sx={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
+  <Card sx={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.06)' }}>
     <CardContent>
       <Typography variant="body1" sx={{ color: 'text.secondary' }}>
         No predictions available yet — run a prediction to see charts here.
@@ -180,7 +184,7 @@ export const PredictionsBarCard = ({ history }) => {
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={COLORS.grid} />
           <XAxis dataKey="name" tick={{ fill: COLORS.axis, fontSize: 12 }} axisLine={{ stroke: COLORS.grid }} tickLine={false} />
           <YAxis domain={[0, 100]} tick={{ fill: COLORS.axis, fontSize: 12 }} axisLine={false} tickLine={false} />
-          <Tooltip content={<DarkTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+          <Tooltip content={<DarkTooltip />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
           <Bar dataKey="confidence" radius={[6, 6, 0, 0]} maxBarSize={40}>
             {barData.map((entry, index) => (
               <Cell key={index} fill={entry.prediction === 'Theft' ? COLORS.theft : COLORS.normal} />
@@ -214,8 +218,8 @@ export const ConfidenceLineCard = ({ history }) => {
         <AreaChart data={lineData}>
           <defs>
             <linearGradient id="confidenceFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS.purple} stopOpacity={0.45} />
-              <stop offset="100%" stopColor={COLORS.purple} stopOpacity={0} />
+              <stop offset="0%" stopColor={COLORS.series1} stopOpacity={0.45} />
+              <stop offset="100%" stopColor={COLORS.series1} stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={COLORS.grid} />
@@ -225,10 +229,10 @@ export const ConfidenceLineCard = ({ history }) => {
           <Area
             type="monotone"
             dataKey="confidence"
-            stroke={COLORS.purple}
+            stroke={COLORS.series1}
             strokeWidth={3}
             fill="url(#confidenceFill)"
-            dot={{ r: 3, fill: COLORS.purple, strokeWidth: 0 }}
+            dot={{ r: 3, fill: COLORS.series1, strokeWidth: 0 }}
             activeDot={{ r: 5 }}
           />
         </AreaChart>
@@ -263,7 +267,7 @@ export const LatestPredictionCard = ({ latestPrediction, hasPredictions }) => {
             endAngle={-270}
           >
             <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-            <RadialBar dataKey="value" cornerRadius={16} background={{ fill: 'rgba(255,255,255,0.06)' }} />
+            <RadialBar dataKey="value" cornerRadius={16} background={{ fill: 'rgba(0,0,0,0.04)' }} />
           </RadialBarChart>
         </ResponsiveContainer>
         <Stack
@@ -306,11 +310,11 @@ export const LiveGridLoadCard = ({ intervalMs = 2000, points = 20 }) => {
   const current = data[data.length - 1]?.value ?? 0;
 
   return (
-    <Card sx={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Card sx={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.06)', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <CardContent sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
           <LiveTitle>Live Grid Load</LiveTitle>
-          <Typography sx={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: COLORS.cyan }} variant="h6">
+          <Typography sx={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: COLORS.series2 }} variant="h6">
             {current}%
           </Typography>
         </Stack>
@@ -321,8 +325,8 @@ export const LiveGridLoadCard = ({ intervalMs = 2000, points = 20 }) => {
           <AreaChart data={data}>
             <defs>
               <linearGradient id="liveLoadFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={COLORS.cyan} stopOpacity={0.5} />
-                <stop offset="100%" stopColor={COLORS.cyan} stopOpacity={0} />
+                <stop offset="0%" stopColor={COLORS.series2} stopOpacity={0.5} />
+                <stop offset="100%" stopColor={COLORS.series2} stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={COLORS.grid} />
@@ -332,7 +336,7 @@ export const LiveGridLoadCard = ({ intervalMs = 2000, points = 20 }) => {
             <Area
               type="monotone"
               dataKey="value"
-              stroke={COLORS.cyan}
+              stroke={COLORS.series2}
               strokeWidth={3}
               fill="url(#liveLoadFill)"
               isAnimationActive={false}
@@ -362,7 +366,7 @@ export const LiveDetectionGaugeCard = ({ intervalMs = 2500 }) => {
   const gaugeData = [{ value: rate, fill: color }];
 
   return (
-    <Card sx={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Card sx={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.06)', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <CardContent sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
         <LiveTitle>Live Detection Confidence</LiveTitle>
         <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
@@ -372,7 +376,7 @@ export const LiveDetectionGaugeCard = ({ intervalMs = 2500 }) => {
           <ResponsiveContainer width="100%" height={280}>
             <RadialBarChart innerRadius="72%" outerRadius="100%" data={gaugeData} startAngle={90} endAngle={-270}>
               <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-              <RadialBar dataKey="value" cornerRadius={16} background={{ fill: 'rgba(255,255,255,0.06)' }} isAnimationActive={true} />
+              <RadialBar dataKey="value" cornerRadius={16} background={{ fill: 'rgba(0,0,0,0.04)' }} isAnimationActive={true} />
             </RadialBarChart>
           </ResponsiveContainer>
           <Stack

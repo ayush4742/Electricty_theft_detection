@@ -43,14 +43,15 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import TransformerDatasetPanel from '../components/TransformerDatasetPanel';
 import { getNetworkKpis, getTransformerDetail, getTransformers } from '../services/api';
 
 // Status colours match the MUI theme palette so the page feels native.
 const STATUS_COLOUR = {
-  CRITICAL: '#f16465',
-  WATCH: '#f5a623',
-  NORMAL: '#34d399',
-  NO_DATA: '#8892ac',
+  CRITICAL: '#c0392b',
+  WATCH: '#96690a',
+  NORMAL: '#2e7d32',
+  NO_DATA: '#8a8a8a',
 };
 
 const STATUS_LABEL = {
@@ -60,7 +61,7 @@ const STATUS_LABEL = {
   NO_DATA: 'No data',
 };
 
-const PRIORITY_COLOUR = { HIGH: '#f16465', MEDIUM: '#f5a623', LOW: '#8892ac' };
+const PRIORITY_COLOUR = { HIGH: '#c0392b', MEDIUM: '#96690a', LOW: '#8a8a8a' };
 
 const formatUnits = (value) =>
   Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
@@ -190,7 +191,7 @@ const TransformerDetailDialog = ({ transformerId, days, onClose }) => {
                   label="Billed"
                   value={formatUnits(summary.energy_billed)}
                   sub="units billed to consumers"
-                  colour="#22d3ee"
+                  colour="#6e6e6e"
                 />
               </Grid>
               <Grid item xs={6} md={3}>
@@ -208,7 +209,7 @@ const TransformerDetailDialog = ({ transformerId, days, onClose }) => {
                   label="Revenue at risk"
                   value={formatRupees(summary.estimated_monthly_revenue_loss)}
                   sub="per month at current loss"
-                  colour="#f5a623"
+                  colour="#96690a"
                 />
               </Grid>
             </Grid>
@@ -245,19 +246,19 @@ const TransformerDetailDialog = ({ transformerId, days, onClose }) => {
               <Box sx={{ height: 280, mt: 2 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={trend} margin={{ top: 8, right: 16, left: -8, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-                    <XAxis dataKey="date" stroke="#8892ac" fontSize={12} />
-                    <YAxis stroke="#8892ac" fontSize={12} unit="%" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                    <XAxis dataKey="date" stroke="#8a8a8a" fontSize={12} />
+                    <YAxis stroke="#8a8a8a" fontSize={12} unit="%" />
                     <RechartsTooltip
                       contentStyle={{
-                        background: '#121a2e',
-                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: '#ffffff',
+                        border: '1px solid rgba(0,0,0,0.10)',
                         borderRadius: 12,
                       }}
                       formatter={(value) => [`${value}%`, 'Loss']}
                     />
-                    <ReferenceLine y={8} stroke="#34d399" strokeDasharray="6 4" />
-                    <ReferenceLine y={15} stroke="#f16465" strokeDasharray="6 4" />
+                    <ReferenceLine y={8} stroke="#2e7d32" strokeDasharray="6 4" />
+                    <ReferenceLine y={15} stroke="#c0392b" strokeDasharray="6 4" />
                     <Line
                       type="monotone"
                       dataKey="loss_pct"
@@ -277,19 +278,19 @@ const TransformerDetailDialog = ({ transformerId, days, onClose }) => {
               <Box sx={{ height: 260, mt: 1 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={trend} margin={{ top: 8, right: 16, left: -8, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-                    <XAxis dataKey="date" stroke="#8892ac" fontSize={12} />
-                    <YAxis stroke="#8892ac" fontSize={12} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                    <XAxis dataKey="date" stroke="#8a8a8a" fontSize={12} />
+                    <YAxis stroke="#8a8a8a" fontSize={12} />
                     <RechartsTooltip
                       contentStyle={{
-                        background: '#121a2e',
-                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: '#ffffff',
+                        border: '1px solid rgba(0,0,0,0.10)',
                         borderRadius: 12,
                       }}
                     />
                     <Legend />
-                    <Bar dataKey="energy_supplied" name="Supplied" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="energy_billed" name="Billed" fill="#22d3ee" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="energy_supplied" name="Supplied" fill="#111111" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="energy_billed" name="Billed" fill="#6e6e6e" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </Box>
@@ -417,6 +418,11 @@ const NetworkHealthPage = () => {
         </TextField>
       </Stack>
 
+      {/* Where these numbers come from, and how to replace them. */}
+      <Box sx={{ mb: 3 }}>
+        <TransformerDatasetPanel onDatasetChange={load} />
+      </Box>
+
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
@@ -477,7 +483,7 @@ const NetworkHealthPage = () => {
                 label="Revenue at risk"
                 value={formatRupees(kpis.estimated_monthly_revenue_loss)}
                 sub="per month across the network"
-                colour="#f5a623"
+                colour="#96690a"
               />
             </Grid>
           </Grid>
